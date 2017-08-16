@@ -13,7 +13,7 @@ open class UnzipTask : Sync() {
     @TaskAction
     fun unzip() {
         logger.info("Unzipping IDEA")
-        val idea = project.configurations.getByName("idea")
+        val inspections = project.configurations.getByName("inspections")
         logger.debug("Unzip 2")
 
 
@@ -26,7 +26,7 @@ open class UnzipTask : Sync() {
             cacheDirectory.mkdir()
             logger.debug("Unzip 4")
             project.copy {
-                it.from(project.zipTree(idea.singleFile))
+                it.from(project.zipTree(inspections.singleFile))
                 it.into(cacheDirectory)
             }
             logger.debug("Unzip 5")
