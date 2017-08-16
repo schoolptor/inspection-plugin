@@ -42,7 +42,7 @@ open class InspectionPlugin : AbstractCodeQualityPlugin<Inspection>() {
     override fun configureTaskDefaults(task: Inspection, baseName: String) {
         val configuration = project.configurations.getAt(shortName)
 
-        val unzipTask = project.tasks.getAt("unzip")
+        val unzipTask = project.tasks.getAt("unzip") as UnzipTask
         task.setShouldRunAfter(listOf(unzipTask))
 
         configureDefaultDependencies(configuration)
@@ -77,7 +77,11 @@ open class InspectionPlugin : AbstractCodeQualityPlugin<Inspection>() {
 
     override fun configureForSourceSet(sourceSet: SourceSet, task: Inspection) {
         task.description = "Run IDEA inspections for " + sourceSet.name + " classes"
-        task.classpath = sourceSet.output.plus(sourceSet.compileClasspath)
+        task.classpath = sourceSet.output.plus(
+                sourceSet.compileClasspath
+        ).plus(
+                project.fileTree(mapOf("dir" to "lib/idea/lib", "include" to "*.jar"))
+        )
         task.setSourceSet(sourceSet.allSource)
     }
 
