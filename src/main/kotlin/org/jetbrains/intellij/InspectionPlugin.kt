@@ -1,6 +1,9 @@
 package org.jetbrains.intellij
 
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.SelfResolvingDependency
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.quality.CodeQualityExtension
 import org.gradle.api.plugins.quality.internal.AbstractCodeQualityPlugin
 import org.gradle.api.tasks.SourceSet
@@ -8,6 +11,12 @@ import java.io.File
 import java.util.concurrent.Callable
 
 open class InspectionPlugin : AbstractCodeQualityPlugin<Inspection>() {
+
+    companion object {
+        private val LOG: Logger = Logging.getLogger(InspectionPlugin::class.java)
+
+        val DEFAULT_IDEA_VERSION = "ideaIC:2017.2"
+    }
 
     private val inspectionExtension: InspectionPluginExtension get() = extension as InspectionPluginExtension
 
@@ -51,13 +60,21 @@ open class InspectionPlugin : AbstractCodeQualityPlugin<Inspection>() {
     }
 
     private fun configureDefaultDependencies(configuration: Configuration) {
-        configuration.defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create("com.jetbrains.intellij.idea:${inspectionExtension.ideaVersion}"))
+        LOG.info("XXXXXXXXXXX Configuring default dependencies for configuration ${configuration.name}")
+        if (configuration.dependencies.isEmpty()) {
+            configuration.dependencies.add(project.dependencies.create("com.jetbrains.intellij.idea:${inspectionExtension.ideaVersion}"))
+            configuration.dependencies.add(project.dependencies.create(project.fileTree(mapOf("dir" to "lib/idea/lib", "include" to "*.jar"))))
         }
+        LOG.info(configuration.dependencies.joinToString(separator = ",\n") {
+            when (it) {
+                is SelfResolvingDependency -> it.resolve().joinToString(prefix = "File set: ", limit = 3) { it.absolutePath }
+                else -> it.toString()
+            }
+        })
     }
 
     private fun configureTaskConventionMapping(task: Inspection) {
-        task.logger.info("Configuring task ${task.name}")
+        LOG.info("XXXXXXXXXXX Configuring task ${task.name} convention mapping")
         val taskMapping = task.conventionMapping
         taskMapping.map("config") { inspectionExtension.config }
         taskMapping.map("configProperties") { inspectionExtension.configProperties }
@@ -83,10 +100,5 @@ open class InspectionPlugin : AbstractCodeQualityPlugin<Inspection>() {
                 project.fileTree(mapOf("dir" to "lib/idea/lib", "include" to "*.jar"))
         )
         task.setSourceSet(sourceSet.allSource)
-    }
-
-    companion object {
-
-        val DEFAULT_IDEA_VERSION = "ideaIC:2017.2"
     }
 }
