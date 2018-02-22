@@ -27,8 +27,7 @@ class HTMLGenerator(override val report: SingleFileReport, private val applicati
     }
 
     private fun PsiElement.findElementToPrint(): PsiElement {
-        var document: Document? = null
-        document = containingFile?.virtualFile?.let { documentManager.getDocument(it) }
+        val document = containingFile?.virtualFile?.let { documentManager.getDocument(it) }
         var elementToPrint = this
         while (elementToPrint.parent != null &&
                elementToPrint.parent !is PsiFile &&
